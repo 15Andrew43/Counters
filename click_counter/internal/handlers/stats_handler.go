@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"click_counter/internal/service"
-	"click_counter/pkg/models"
 	"encoding/json"
 	"net/http"
 	"strconv"
@@ -10,11 +9,11 @@ import (
 )
 
 type StatsHandler struct {
-	service *service.ClickService
+	statsService service.StatsService
 }
 
-func NewStatsHandler(service *service.ClickService) *StatsHandler {
-	return &StatsHandler{service: service}
+func NewStatsHandler(statsService service.StatsService) *StatsHandler {
+	return &StatsHandler{statsService: statsService}
 }
 
 func (h *StatsHandler) Handle(w http.ResponseWriter, r *http.Request) {
@@ -25,7 +24,10 @@ func (h *StatsHandler) Handle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var req models.StatsRequest
+	var req struct {
+		From string `json:"tsFrom"`
+		To   string `json:"tsTo"`
+	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
@@ -43,7 +45,12 @@ func (h *StatsHandler) Handle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	total := h.service.GetStatistics(bannerID, from, to)
+	clicks, err := h.statsService.GetStatistics(bannerID, from, to)
+	if err != nil {
+		http.Error(w, "Failed to fetch statistics", http.StatusInternalServerError)
+		return
+	}
+
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(strconv.Itoa(total) + "\n"))
+	w.Write([]byte(strconv.Itoa(clicks) + "\n"))
 }

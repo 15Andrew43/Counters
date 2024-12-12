@@ -7,11 +7,11 @@ import (
 )
 
 type CounterHandler struct {
-	service *service.ClickService
+	clickService service.ClickService
 }
 
-func NewCounterHandler(service *service.ClickService) *CounterHandler {
-	return &CounterHandler{service: service}
+func NewCounterHandler(clickService service.ClickService) *CounterHandler {
+	return &CounterHandler{clickService: clickService}
 }
 
 func (h *CounterHandler) Handle(w http.ResponseWriter, r *http.Request) {
@@ -22,7 +22,12 @@ func (h *CounterHandler) Handle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.service.RegisterClick(bannerID)
+	err = h.clickService.RegisterClick(bannerID)
+	if err != nil {
+		http.Error(w, "Failed to register click", http.StatusInternalServerError)
+		return
+	}
+
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("Click registered\n"))
 }
