@@ -1,0 +1,43 @@
+version: "3.8"
+
+services:
+  click_counter:
+    build:
+      context: .
+      dockerfile: ./click_counter/Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_NAME=clicks_db
+      - FLUSH_INTERVAL=10
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - click_network
+
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: clicks_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 2s
+      timeout: 5s
+      retries: 5
+    networks:
+      - click_network
+
+networks:
+  click_network:
+    driver: bridge
