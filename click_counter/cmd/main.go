@@ -7,6 +7,8 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
+	"time"
 )
 
 func main() {
@@ -16,13 +18,19 @@ func main() {
 	user := os.Getenv("DB_USER")
 	password := os.Getenv("DB_PASSWORD")
 	dbname := os.Getenv("DB_NAME")
+	flushIntervalStr := os.Getenv("FLUSH_INTERVAL")
+
+	flushInterval, err := strconv.Atoi(flushIntervalStr)
+	if err != nil || flushInterval <= 0 {
+		log.Fatalf("Invalid flush interval: %v", err)
+	}
 
 	repo, err := repository.NewClickRepository(host, port, user, password, dbname)
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
 
-	clickService := service.NewClickService(repo)
+	clickService := service.NewClickService(repo, time.Duration(flushInterval)*time.Second)
 	statsService := service.NewStatsService(repo)
 
 	counterHandler := handlers.NewCounterHandler(clickService)

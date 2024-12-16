@@ -11,6 +11,7 @@ import (
 
 type Repository interface {
 	AddClick(bannerID int) error
+	AddClicks(bannerID, count int, timestamp time.Time) error
 	GetClicks(bannerID int, from, to time.Time) (int, error)
 }
 
@@ -65,6 +66,23 @@ func (r *ClickRepository) GetClicks(bannerID int, from, to time.Time) (int, erro
 		return 0, err
 	}
 
-	log.Printf("Fetched %d clicks for bannerID %d from %s to %s", total, bannerID, from, to)
+	log.Printf("GetClicks: Fetched %d clicks for bannerID %d from %s to %s", total, bannerID, from, to)
 	return total, nil
+}
+
+func (r *ClickRepository) AddClicks(bannerID, count int, timestamp time.Time) error {
+	query := `
+		INSERT INTO clicks (banner_id, timestamp, count)
+		VALUES ($1, $2, $3)
+		ON CONFLICT (banner_id, timestamp) DO UPDATE
+		SET count = $3
+	`
+	_, err := r.db.Exec(query, bannerID, timestamp, count)
+	if err != nil {
+		log.Printf("Error adding clicks for bannerID %d: %v", bannerID, err)
+		return err
+	}
+
+	log.Printf("Flushed %d clicks for bannerID %d at %v", count, bannerID, timestamp)
+	return nil
 }

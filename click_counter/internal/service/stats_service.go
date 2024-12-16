@@ -25,6 +25,6 @@ func (s *DefaultStatsService) GetStatistics(bannerID int, from, to time.Time) (i
 		return 0, err
 	}
 
-	log.Printf("Fetched %d clicks for bannerID %d from %s to %s", clicks, bannerID, from, to)
+	log.Printf("GetStatistics: Fetched %d clicks for bannerID %d from %s to %s", clicks, bannerID, from, to)
 	return clicks, nil
 }

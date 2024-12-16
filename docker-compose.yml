@@ -13,8 +13,12 @@ services:
       - DB_USER=postgres
       - DB_PASSWORD=postgres
       - DB_NAME=clicks_db
+      - FLUSH_INTERVAL=10
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
+    networks:
+      - click_network
 
   postgres:
     image: postgres:15
@@ -28,6 +32,12 @@ services:
       - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
+      interval: 2s  # Уменьшенный интервал
       timeout: 5s
       retries: 5
+    networks:
+      - click_network
+
+networks:
+  click_network:
+    driver: bridge
